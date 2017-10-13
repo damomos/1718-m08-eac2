@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.List;
+
 import ibanez.jacob.cat.xtec.ioc.lectorrss.model.RssItem;
 import ibanez.jacob.cat.xtec.ioc.lectorrss.utils.DateUtils;
 
@@ -61,6 +63,7 @@ public class DBInterface {
     }
 
     //Open and close methods
+
     /**
      * This method opens the connection to the database
      *
@@ -80,8 +83,8 @@ public class DBInterface {
     }
 
     //Methods for manipulating data
+
     /**
-     *
      * @param item
      * @return
      */
@@ -102,14 +105,18 @@ public class DBInterface {
     }
 
     /**
-     *
      * @return
      */
-    public Cursor getAllItems() {
-        return mDatabase.query(TABLE_ITEMS, SELECT_ALL, null, null, null, null, null);
+    public List<RssItem> getAllItems() {
+        Cursor cursor = mDatabase.query(TABLE_ITEMS, SELECT_ALL, null, null, null, null, null);
+
+        cursor.close();
+
+        return null;
     }
 
     //Helper inner class
+
     /**
      * Helper inner class for accessing the database
      */

@@ -19,6 +19,8 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import ibanez.jacob.cat.xtec.ioc.lectorrss.model.RssItem;
@@ -83,7 +85,6 @@ public class MainActivity extends AppCompatActivity {
                 //you pressed refresh button but there is no connection
                 Toast.makeText(this, R.string.toast_there_is_no_connection, Toast.LENGTH_SHORT).show();
             }
-
         }
     }
 
@@ -146,34 +147,49 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected List<RssItem> doInBackground(String... strings) {
 
-            try {
-                //Carreguem l'XML
-                return mItemService.getAllRssItems(strings[0]);
-            } catch (IOException e) {
-                //Error de connexió
-                return "Error de connexió";
-                //return getResources().getString(R.string.connection_error);
-            } catch (XmlPullParserException e) {
-                //Error de parse
-                return "Error a l'analitzar l'XML";
-                //return getResources().getString(R.string.xml_error);
+//            try {
+//                //Carreguem l'XML
+//                return mItemService.getAllRssItems(strings[0]);
+//            } catch (IOException e) {
+//                //Error de connexió
+//                return "Error de connexió";
+//                //return getResources().getString(R.string.connection_error);
+//            } catch (XmlPullParserException e) {
+//                //Error de parse
+//                return "Error a l'analitzar l'XML";
+//                //return getResources().getString(R.string.xml_error);
+//            }
+//
+//            InputStream in;
+//            //TODO get the XML from the feed url and process it
+//            try {
+//                in = ConnectionUtils.openHttpConnection(strings[0]);
+//                List<RssItem> result = mItemService.getAllRssItems();
+//            } catch (IOException ex) {
+//
+//            }finally {
+//                if (in != null) {
+//                    in.close();
+//                }
+//            }
+//            //TODO save to the database all the info of the XML file
+//            //TODO download thumbnails to the cache directory
+//            return result;
+
+            List<RssItem> items = new ArrayList<>();
+
+            for (int i = 1; i <= 100; i++) {
+                items.add(new RssItem(
+                        "Title " + i,
+                        "link",
+                        "author",
+                        "Description",
+                        new Date(),
+                        "category",
+                        "thumbnail"));
             }
 
-            InputStream in;
-            //TODO get the XML from the feed url and process it
-            try {
-                in = ConnectionUtils.openHttpConnection(strings[0]);
-                List<RssItem> result = mItemService.getAllRssItems();
-            } catch (IOException ex) {
-
-            }finally {
-                if (in != null) {
-                    in.close();
-                }
-            }
-            //TODO save to the database all the info of the XML file
-            //TODO download thumbnails to the cache directory
-            return result;
+            return items;
         }
 
         @Override
