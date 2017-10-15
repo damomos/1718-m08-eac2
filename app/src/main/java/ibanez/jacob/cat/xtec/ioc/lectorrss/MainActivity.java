@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             //set progress bar visible and hid recycler view, so we are connecting to the internet
-            mProgressBar.setVisibility(View.INVISIBLE);
+            mProgressBar.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<RssItem> items) {
             //set progress bar invisible and show recycler view, so the result from the internet has arrived
-            mProgressBar.setVisibility(View.VISIBLE);
+            mProgressBar.setVisibility(View.INVISIBLE);
 
             //feed the list of items of the recycler view's adapter
             mItemAdapter.setItems(items);
