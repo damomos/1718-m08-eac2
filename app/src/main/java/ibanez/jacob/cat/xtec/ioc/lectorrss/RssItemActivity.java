@@ -55,17 +55,26 @@ public class RssItemActivity extends AppCompatActivity {
     }
 
     private String buildHtmlFromItem(RssItem item) {
+        //we check if description is too long
+        String description = item.getDescription();
+        boolean descriptionIsTooLong = item.getDescription().length() > MAX_CHARACTERS;
+        //we create resumed description if it is too long
+        if (descriptionIsTooLong) {
+            String paddingString = "... ";
+            description = item.getDescription().substring(0, MAX_CHARACTERS - paddingString.length()) + paddingString;
+        }
+
         return String.format("<h3>%s</h3>" +
                         "<hr>" +
                         "<p>%s</p>" +
                         "<hr>" +
-                        "<em style='text-align: end'>%s</em>" +
+                        "<p style='text-align: end'><em>%s</em></p>" +
                         "<hr>" +
                         "<p><i>%s:</i> %s</p>" +
-                        "<br>" +
+                        "</p>" +
                         "<p>%s</p>",
                 item.getTitle(),
-                item.getDescription().substring(0, MAX_CHARACTERS),
+                description,
                 item.getAuthor(),
                 getString(R.string.item_categories),
                 item.getCategories(),

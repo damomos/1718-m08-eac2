@@ -2,7 +2,6 @@ package ibanez.jacob.cat.xtec.ioc.lectorrss;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -31,14 +30,14 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemAdapterVie
      * This is handy if we want to add new items to the list, but don't want to instantiate a new
      * adapter.
      *
-     * @param mItems The new list
+     * @param items The new list
      */
-    public void setItems(List<RssItem> mItems) {
-        this.mItems = mItems;
+    public void setItems(List<RssItem> items) {
+        this.mItems = items;
+        this.notifyDataSetChanged();
     }
 
     /**
-     *
      * @param searchPattern
      */
     public void searchItems(String searchPattern) {
@@ -66,13 +65,14 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemAdapterVie
         RssItem item = mItems.get(position);
 
         //we set the content of the item view
-        holder.mThumbnail.setImageDrawable(Drawable.createFromPath(item.getThumbnail()));
+//        holder.mThumbnail.setImageDrawable(Drawable.createFromPath(item.getThumbnail()));
+        holder.mThumbnail.setImageResource(android.R.drawable.ic_menu_report_image);
         holder.mTitle.setText(item.getTitle());
     }
 
     @Override
     public int getItemCount() {
-        return mItems.isEmpty() || mItems == null ? 0 : mItems.size();
+        return mItems != null && !mItems.isEmpty() ? mItems.size() : 0;
     }
 
     /**
@@ -95,15 +95,11 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemAdapterVie
             mThumbnail = itemView.findViewById(R.id.item_thumbnail);
             mTitle = itemView.findViewById(R.id.item_title);
 
-            //set click listener
+            //set click listener and long click listener
             itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(this);
         }
 
-        /**
-         * This method handles the behavior that happens when an item of the Recycler View is selected
-         *
-         * @param view The selected view
-         */
         @Override
         public void onClick(View view) {
             //we get the position of the clicked view holder and get the selected item

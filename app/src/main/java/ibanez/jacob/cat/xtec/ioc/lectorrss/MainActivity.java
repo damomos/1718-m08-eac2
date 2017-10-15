@@ -15,10 +15,6 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -80,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             //otherwise, check if you must load data from database or not
             if (loadFromDatabase) {
                 Toast.makeText(this, R.string.toast_offline_load, Toast.LENGTH_SHORT).show();
+                mItemAdapter.setItems(mockResults()); //TODO delete mock!!
                 //TODO fill adapter list from database
             } else {
                 //you pressed refresh button but there is no connection
@@ -140,8 +137,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            //set progress bar visible, so we are connecting to the internet
-            mProgressBar.setVisibility(View.VISIBLE);
+            //set progress bar visible and hid recycler view, so we are connecting to the internet
+            mProgressBar.setVisibility(View.INVISIBLE);
         }
 
         @Override
@@ -176,29 +173,44 @@ public class MainActivity extends AppCompatActivity {
 //            //TODO download thumbnails to the cache directory
 //            return result;
 
-            List<RssItem> items = new ArrayList<>();
-
-            for (int i = 1; i <= 100; i++) {
-                items.add(new RssItem(
-                        "Title " + i,
-                        "link",
-                        "author",
-                        "Description",
-                        new Date(),
-                        "category",
-                        "thumbnail"));
-            }
-
-            return items;
+            return mockResults(); //TODO delete mock!!
         }
 
         @Override
         protected void onPostExecute(List<RssItem> items) {
-            //set progress bar invisible, so the result from the internet has arrived
-            mProgressBar.setVisibility(View.INVISIBLE);
+            //set progress bar invisible and show recycler view, so the result from the internet has arrived
+            mProgressBar.setVisibility(View.VISIBLE);
 
             //feed the list of items of the recycler view's adapter
             mItemAdapter.setItems(items);
         }
+    }
+
+    /**
+     * Method for mocking a list of {@link RssItem}s
+     *
+     * @return A list of {@link RssItem}s
+     */
+    private List<RssItem> mockResults() {
+        List<RssItem> items = new ArrayList<>();
+
+        for (int i = 1; i <= 100; i++) {
+            items.add(new RssItem(
+                    "Title " + i,
+                    "https://duckduckgo.com/?q=" + i,
+                    "author",
+                    "Description",
+                    new Date(),
+                    "category",
+                    "thumbnail"));
+            //Simulate wait time
+            try {
+                Thread.sleep(25);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return items;
     }
 }
