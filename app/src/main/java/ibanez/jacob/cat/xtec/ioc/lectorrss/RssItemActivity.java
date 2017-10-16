@@ -6,6 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.UnsupportedEncodingException;
+
 import ibanez.jacob.cat.xtec.ioc.lectorrss.model.RssItem;
 import ibanez.jacob.cat.xtec.ioc.lectorrss.utils.ConnectionUtils;
 import ibanez.jacob.cat.xtec.ioc.lectorrss.utils.DateUtils;
@@ -21,7 +23,6 @@ public class RssItemActivity extends AppCompatActivity {
      * The constant EXTRA_ITEM for sending a {@link RssItem} between activities inside an {@link Intent}.
      */
     public static final String EXTRA_ITEM = RssItemActivity.class.getCanonicalName() + ".ITEM";
-    public static final int MAX_CHARACTERS = 255;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,21 +50,12 @@ public class RssItemActivity extends AppCompatActivity {
                 //otherwise, create an HTML with title, description, author, categories, and publish date
                 //and show it in the web view
                 String html = buildHtmlFromItem(item);
-                webView.loadData(html, "text/html", null);
+                webView.loadData(html, "text/html; charset=UTF-8", null);
             }
         }
     }
 
     private String buildHtmlFromItem(RssItem item) {
-        //we check if description is too long
-        String description = item.getDescription();
-        boolean descriptionIsTooLong = item.getDescription().length() > MAX_CHARACTERS;
-        //we create resumed description if it is too long
-        if (descriptionIsTooLong) {
-            String paddingString = "... ";
-            description = item.getDescription().substring(0, MAX_CHARACTERS - paddingString.length()) + paddingString;
-        }
-
         return String.format("<h3>%s</h3>" +
                         "<hr>" +
                         "<p>%s</p>" +
@@ -74,7 +66,7 @@ public class RssItemActivity extends AppCompatActivity {
                         "</p>" +
                         "<p>%s</p>",
                 item.getTitle(),
-                description,
+                item.getDescription(),
                 item.getAuthor(),
                 getString(R.string.item_categories),
                 item.getCategories(),

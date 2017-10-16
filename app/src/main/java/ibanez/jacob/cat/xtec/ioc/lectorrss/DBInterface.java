@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ibanez.jacob.cat.xtec.ioc.lectorrss.model.RssItem;
@@ -32,8 +33,10 @@ public class DBInterface {
     private static final String COLUMN_PUB_DATE = "PUB_DATE";
     private static final String COLUMN_CATEGORIES = "CATEGORIES";
     private static final String COLUMN_THUMBNAIL = "THUMBNAIL";
+    private static final String COLUMN_IMAGE_CACHE_PATH = "IMAGE_CACHE_PATH";
     private static final String[] SELECT_ALL = new String[]{COLUMN_ID, COLUMN_TITLE, COLUMN_LINK,
-            COLUMN_AUTHOR, COLUMN_DESCRIPTION, COLUMN_PUB_DATE, COLUMN_CATEGORIES, COLUMN_THUMBNAIL};
+            COLUMN_AUTHOR, COLUMN_DESCRIPTION, COLUMN_PUB_DATE, COLUMN_CATEGORIES, COLUMN_THUMBNAIL,
+            COLUMN_IMAGE_CACHE_PATH};
 
     //Database variables
     public static final String DB_NAME = "FEEDS_DB";
@@ -50,7 +53,8 @@ public class DBInterface {
                     COLUMN_DESCRIPTION + " TEXT NOT NULL," +
                     COLUMN_PUB_DATE + " TEXT NOT NULL," +
                     COLUMN_CATEGORIES + " TEXT NOT NULL," +
-                    COLUMN_THUMBNAIL + " TEXT NOT NULL" +
+                    COLUMN_THUMBNAIL + " TEXT NOT NULL," +
+                    COLUMN_IMAGE_CACHE_PATH + " TEXT NOT NULL" +
                     ");";
 
     //class members
@@ -100,6 +104,7 @@ public class DBInterface {
                 DateUtils.RSS_DATE_FORMAT));
         initialValues.put(COLUMN_CATEGORIES, item.getCategories());
         initialValues.put(COLUMN_THUMBNAIL, item.getThumbnail());
+        initialValues.put(COLUMN_IMAGE_CACHE_PATH, item.getImagePathInCache());
 
         return mDatabase.insert(TABLE_ITEMS, null, initialValues);
     }
@@ -108,11 +113,29 @@ public class DBInterface {
      * @return
      */
     public List<RssItem> getAllItems() {
+        List<RssItem> items = new ArrayList<>();
         Cursor cursor = mDatabase.query(TABLE_ITEMS, SELECT_ALL, null, null, null, null, null);
 
-        cursor.close();
+        if (cursor.moveToFirst()) {
+            do {
+                RssItem item = new RssItem(
+                        cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_LINK)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_AUTHOR)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
+                        DateUtils.stringToDate(cursor.getString(cursor.getColumnIndex(COLUMN_PUB_DATE)),
+                                DateUtils.RSS_DATE_FORMAT),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_CATEGORIES)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_THUMBNAIL)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_CACHE_PATH))
+                );
+                items.add(item);
+            } while (cursor.moveToNext());
 
-        return null;
+            cursor.close();
+        }
+
+        return items;
     }
 
     //Helper inner class

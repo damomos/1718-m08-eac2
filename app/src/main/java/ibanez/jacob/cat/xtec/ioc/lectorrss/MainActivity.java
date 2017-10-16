@@ -3,9 +3,11 @@ package ibanez.jacob.cat.xtec.ioc.lectorrss;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,6 +17,14 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,12 +39,16 @@ import ibanez.jacob.cat.xtec.ioc.lectorrss.utils.ConnectionUtils;
  */
 public class MainActivity extends AppCompatActivity {
 
+    //Tag for logging purposes
+    private static final String TAG = MainActivity.class.getSimpleName();
+
     public static final String FEED_CHANNEL = "http://www.eldiario.es/rss/";
 
     private LinearLayout mSearchBar;
     private EditText mSearchQuery;
     private ProgressBar mProgressBar;
     private ItemAdapter mItemAdapter;
+    private DBInterface mDataBase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +62,16 @@ public class MainActivity extends AppCompatActivity {
         mSearchQuery = (EditText) findViewById(R.id.et_search);
         mProgressBar = (ProgressBar) findViewById(R.id.pb_loading_indicator);
         mItemAdapter = new ItemAdapter(this);
+        mDataBase = new DBInterface(this);
 
         //set the layout manager and the adapter of the recycler view
-        RecyclerView mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mRecyclerView.setAdapter(mItemAdapter);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(mItemAdapter);
+        //add a decorator to separate items
+        DividerItemDecoration decoration = new DividerItemDecoration(this, layoutManager.getOrientation());
+        recyclerView.addItemDecoration(decoration);
 
         //set onClickListener for the search button
         ImageButton searchButton = (ImageButton) findViewById(R.id.ib_search);
@@ -75,9 +94,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             //otherwise, check if you must load data from database or not
             if (loadFromDatabase) {
+                //fill adapter list from database
+                mDataBase.open();
+                mItemAdapter.setItems(mDataBase.getAllItems());
+                mDataBase.close();
+
                 Toast.makeText(this, R.string.toast_offline_load, Toast.LENGTH_SHORT).show();
-                mItemAdapter.setItems(mockResults()); //TODO delete mock!!
-                //TODO fill adapter list from database
             } else {
                 //you pressed refresh button but there is no connection
                 Toast.makeText(this, R.string.toast_there_is_no_connection, Toast.LENGTH_SHORT).show();
@@ -143,37 +165,22 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected List<RssItem> doInBackground(String... strings) {
+            List<RssItem> result = null;
 
-//            try {
-//                //Carreguem l'XML
-//                return mItemService.getAllRssItems(strings[0]);
-//            } catch (IOException e) {
-//                //Error de connexió
-//                return "Error de connexió";
-//                //return getResources().getString(R.string.connection_error);
-//            } catch (XmlPullParserException e) {
-//                //Error de parse
-//                return "Error a l'analitzar l'XML";
-//                //return getResources().getString(R.string.xml_error);
-//            }
-//
-//            InputStream in;
-//            //TODO get the XML from the feed url and process it
-//            try {
-//                in = ConnectionUtils.openHttpConnection(strings[0]);
-//                List<RssItem> result = mItemService.getAllRssItems();
-//            } catch (IOException ex) {
-//
-//            }finally {
-//                if (in != null) {
-//                    in.close();
-//                }
-//            }
-//            //TODO save to the database all the info of the XML file
-//            //TODO download thumbnails to the cache directory
-//            return result;
+            try {
+                //get the XML from the feed url and process it
+                result = getRssItems(strings[0]);
+                //TODO save to the database all the info of the XML file
+                storeResult(result);
+                //download thumbnails to the cache directory
+                cacheImages(result);
+            } catch (IOException ex) {
 
-            return mockResults(); //TODO delete mock!!
+            } catch (XmlPullParserException ex) {
+
+            }
+
+            return result;
         }
 
         @Override
@@ -186,31 +193,61 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Method for mocking a list of {@link RssItem}s
-     *
-     * @return A list of {@link RssItem}s
-     */
-    private List<RssItem> mockResults() {
-        List<RssItem> items = new ArrayList<>();
+    private void storeResult(List<RssItem> result) {
+        mDataBase.open();
+        for (RssItem item : result) {
+            mDataBase.insertItem(item);
+        }
+        mDataBase.close();
+    }
 
-        for (int i = 1; i <= 100; i++) {
-            items.add(new RssItem(
-                    "Title " + i,
-                    "https://duckduckgo.com/?q=" + i,
-                    "author",
-                    "Description",
-                    new Date(),
-                    "category",
-                    "thumbnail"));
-            //Simulate wait time
+    /**
+     *
+     * @param result
+     */
+    private void cacheImages(List<RssItem> result) {
+        for (RssItem item : result) {
             try {
-                Thread.sleep(25);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                URL imageUrl = new URL(item.getThumbnail());
+                InputStream inputStream = (InputStream) imageUrl.getContent();
+                byte[] bufferImage = new byte[1024];
+
+                OutputStream outputStream = new FileOutputStream(item.getImagePathInCache());
+
+                int count;
+                while ((count = inputStream.read(bufferImage)) != -1) {
+                    outputStream.write(bufferImage, 0, count);
+                }
+
+                inputStream.close();
+                outputStream.close();
+            } catch (IOException ex) {
+                Log.e(TAG, "Error downloading image from " + item.getThumbnail(), ex);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     * @throws XmlPullParserException
+     */
+    private List<RssItem> getRssItems(String url) throws IOException, XmlPullParserException {
+        InputStream in = null;
+        RssItemParser parser = new RssItemParser(this);
+        List<RssItem> result = null;
+
+        try {
+            in = ConnectionUtils.openHttpConnection(url);
+            result = parser.parse(in);
+        } finally {
+            if (in != null) {
+                in.close();
             }
         }
 
-        return items;
+        return result;
     }
 }

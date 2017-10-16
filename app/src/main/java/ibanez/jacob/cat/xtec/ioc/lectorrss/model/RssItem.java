@@ -20,16 +20,18 @@ public class RssItem implements Serializable {
     private Date pubDate;
     private String categories;
     private String thumbnail;
+    private String imagePathInCache;
 
     public RssItem(String title, String link, String author, String description,
-                   Date pubDate, String category, String thumbnail) {
+                   Date pubDate, String categories, String thumbnail, String imagePathInCache) {
         this.title = title;
         this.link = link;
         this.author = author;
         this.description = description;
         this.pubDate = pubDate;
-        this.categories = category;
+        this.categories = categories;
         this.thumbnail = thumbnail;
+        this.imagePathInCache = imagePathInCache;
     }
 
     public String getTitle() {
@@ -88,23 +90,32 @@ public class RssItem implements Serializable {
         this.thumbnail = thumbnail;
     }
 
+    public String getImagePathInCache() {
+        return imagePathInCache;
+    }
+
+    public void setImagePathInCache(String imagePathInCache) {
+        this.imagePathInCache = imagePathInCache;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RssItem rssItem = (RssItem) o;
-        return Objects.equals(title, rssItem.title) &&
-                Objects.equals(link, rssItem.link) &&
-                Objects.equals(author, rssItem.author) &&
-                Objects.equals(description, rssItem.description) &&
-                Objects.equals(pubDate, rssItem.pubDate) &&
-                Objects.equals(categories, rssItem.categories) &&
-                Objects.equals(thumbnail, rssItem.thumbnail);
+        RssItem item = (RssItem) o;
+        return Objects.equals(title, item.title) &&
+                Objects.equals(link, item.link) &&
+                Objects.equals(author, item.author) &&
+                Objects.equals(description, item.description) &&
+                Objects.equals(pubDate, item.pubDate) &&
+                Objects.equals(categories, item.categories) &&
+                Objects.equals(thumbnail, item.thumbnail) &&
+                Objects.equals(imagePathInCache, item.imagePathInCache);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(title, link, author, description, pubDate, categories, thumbnail);
+        return Objects.hash(title, link, author, description, pubDate, categories, thumbnail, imagePathInCache);
     }
 
     @Override
@@ -116,7 +127,8 @@ public class RssItem implements Serializable {
                 ", description='" + description + '\'' +
                 ", pubDate=" + pubDate +
                 ", categories='" + categories + '\'' +
-                ", thumbnail=" + thumbnail +
+                ", thumbnail='" + thumbnail + '\'' +
+                ", imagePathInCache='" + imagePathInCache + '\'' +
                 '}';
     }
 }

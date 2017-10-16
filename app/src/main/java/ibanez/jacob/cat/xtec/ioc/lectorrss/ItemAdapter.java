@@ -2,6 +2,7 @@ package ibanez.jacob.cat.xtec.ioc.lectorrss;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -65,8 +66,13 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemAdapterVie
         RssItem item = mItems.get(position);
 
         //we set the content of the item view
-//        holder.mThumbnail.setImageDrawable(Drawable.createFromPath(item.getThumbnail()));
-        holder.mThumbnail.setImageResource(android.R.drawable.ic_menu_report_image);
+        boolean hasCachePath = item.getImagePathInCache() != null && item.getImagePathInCache().length() > 0;
+        boolean pathExists = Drawable.createFromPath(item.getImagePathInCache()) != null;
+        if (hasCachePath && pathExists) {
+            holder.mThumbnail.setImageDrawable(Drawable.createFromPath(item.getImagePathInCache()));
+        } else {
+            holder.mThumbnail.setImageResource(android.R.drawable.ic_menu_report_image);
+        }
         holder.mTitle.setText(item.getTitle());
     }
 
