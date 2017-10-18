@@ -1,7 +1,9 @@
 package ibanez.jacob.cat.xtec.ioc.lectorrss;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,10 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import ibanez.jacob.cat.xtec.ioc.lectorrss.model.RssItem;
@@ -37,12 +36,10 @@ import ibanez.jacob.cat.xtec.ioc.lectorrss.utils.ConnectionUtils;
  *
  * @author <a href="mailto:jacobibanez@jacobibanez.com">Jacob Ibáñez Sánchez</a>.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<RssItem>> {
 
     //Tag for logging purposes
     private static final String TAG = MainActivity.class.getSimpleName();
-
-    public static final String FEED_CHANNEL = "http://www.eldiario.es/rss/";
 
     private LinearLayout mSearchBar;
     private EditText mSearchQuery;
@@ -90,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
         //check for internet connection
         if (ConnectionUtils.hasConnection(this)) {
             //if there is connection, start the execution of the async task
-            new DownloadRssTask().execute(FEED_CHANNEL);
+            getSupportLoaderManager().initLoader(1, null, this).forceLoad();
+            //new DownloadRssTask().execute(FEED_CHANNEL);
         } else {
             //otherwise, check if you must load data from database or not
             if (loadFromDatabase) {
@@ -152,46 +150,106 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * This class is for downloading a XML file from the internet in a background thread
-     */
-    private class DownloadRssTask extends AsyncTask<String, Void, List<RssItem>> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            //set progress bar visible and hid recycler view, so we are connecting to the internet
-            mProgressBar.setVisibility(View.VISIBLE);
-        }
 
-        @Override
-        protected List<RssItem> doInBackground(String... strings) {
+    @Override
+    public Loader<List<RssItem>> onCreateLoader(int id, Bundle args) {
+        /**
+         * This class is for downloading a XML file from the internet in a background thread
+         */
+        return new AsyncTaskLoader<List<RssItem>>(this) {
+
             List<RssItem> result = null;
+            String FEED_CHANNEL = "http://www.eldiario.es/rss/";
 
-            try {
+            @Override
+            protected void onStartLoading() {
+                //super.onStartLoading();
+                if(result != null) {
+                    // use cached data
+                    deliverResult(result);
+                } else {
+                    // we have no data, so kick off loading it
+                    forceLoad();
+                }
+            }
+
+            @Override
+            public List<RssItem> loadInBackground() {
+
                 //get the XML from the feed url and process it
-                result = getRssItems(strings[0]);
+                try {
+                    result = getRssItems(FEED_CHANNEL);
+                    Log.d("RESULT", result.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (XmlPullParserException e) {
+                    e.printStackTrace();
+                }
                 //TODO save to the database all the info of the XML file
                 storeResult(result);
                 //download thumbnails to the cache directory
                 cacheImages(result);
-            } catch (IOException ex) {
 
-            } catch (XmlPullParserException ex) {
-
+                return result;
             }
 
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute(List<RssItem> items) {
-            //set progress bar invisible and show recycler view, so the result from the internet has arrived
-            mProgressBar.setVisibility(View.INVISIBLE);
-
-            //feed the list of items of the recycler view's adapter
-            mItemAdapter.setItems(items);
-        }
+            @Override
+            public void deliverResult(List<RssItem> data) {
+                super.deliverResult(data);
+            }
+        };
     }
+
+    @Override
+    public void onLoadFinished(Loader<List<RssItem>> loader, List<RssItem> data) {
+        mItemAdapter.setItems(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<RssItem>> loader) {
+
+    }
+
+
+
+
+//    private class DownloadRssTask extends AsyncTask<String, Void, List<RssItem>> {
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//            //set progress bar visible and hid recycler view, so we are connecting to the internet
+//            mProgressBar.setVisibility(View.VISIBLE);
+//        }
+//
+//        @Override
+//        protected List<RssItem> doInBackground(String... strings) {
+//            List<RssItem> result = null;
+//
+//            try {
+//                //get the XML from the feed url and process it
+//                result = getRssItems(strings[0]);
+//                //TODO save to the database all the info of the XML file
+//                storeResult(result);
+//                //download thumbnails to the cache directory
+//                cacheImages(result);
+//            } catch (IOException ex) {
+//
+//            } catch (XmlPullParserException ex) {
+//
+//            }
+//
+//            return result;
+//        }
+
+//        @Override
+//        protected void onPostExecute(List<RssItem> items) {
+//            //set progress bar invisible and show recycler view, so the result from the internet has arrived
+//            mProgressBar.setVisibility(View.INVISIBLE);
+//
+//            //feed the list of items of the recycler view's adapter
+//            mItemAdapter.setItems(items);
+//        }
+//    }
 
     private void storeResult(List<RssItem> result) {
         mDataBase.open();
